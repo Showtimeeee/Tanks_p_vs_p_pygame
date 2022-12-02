@@ -14,7 +14,7 @@ clock = pg.time.Clock()
 DIRECTS = [[0, -1], [1, 0], [0, 1], [-1, 0]]
 
 
-class Tank():
+class Tank:
     def __init__(self, color, px, py, direct, key_list):
         objects.append(self)
         self.type = 'tank'
@@ -51,6 +51,18 @@ class Tank():
         x = self.rect.centerx + DIRECTS[self.direct][0] * 30
         y = self.rect.centery + DIRECTS[self.direct][1] * 30
         pg.draw.line(window, 'white', self.rect.center, (x, y), 4)
+
+
+class Bullet:
+    def __int__(self):
+        pass
+
+    def update(self):
+        pass
+
+    def draw(self):
+        pass
+
 
 
 objects = []
