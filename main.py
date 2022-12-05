@@ -27,8 +27,7 @@ img_brick = pg.image.load('images/block/1.png')
 # ]
 # img player
 img_tank = [
-    pg.image.load('images/z2.png'),
-    pg.image.load('images/tank2.png')
+    pg.image.load('images/z2.png')
 ]
 # img explosion
 img_bangs = [
