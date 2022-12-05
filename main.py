@@ -18,12 +18,15 @@ clock = pg.time.Clock()
 background_image = pg.image.load('images/greenbg.png')
 # font
 font_ui = pg.font.Font(None, 42)
-# img bricks
-img_brick = pg.image.load('images/block/1.png')
+# img bricks element
+img_brick = pg.image.load('images/block/4.png')
 # img_brick = [
 #     pg.image.load('images/block/1.png'),
 #     pg.image.load('images/block/2.png'),
-#     pg.image.load('images/block/3.png')
+#     pg.image.load('images/block/3.png'),
+#     pg.image.load('images/block/4.png'),
+#     pg.image.load('images/block/5.png'),
+#     pg.image.load('images/block/6.png'),
 # ]
 # img player upgrade
 img_tank = [
@@ -113,7 +116,7 @@ class Tank:
         self.shot_delay = 40
         self.bullet_speed = 12
         self.bullet_damage = 1
-
+        # key btn list
         self.key_left = key_list[0]
         self.key_right = key_list[1]
         self.key_up = key_list[2]
@@ -231,7 +234,7 @@ class Bang:
 
     def update(self):
         # one frame one expl
-        self.frame += 0.2
+        self.frame += 0.5
         if self.frame >= 18:
             objects.remove(self)
 
@@ -276,8 +279,10 @@ class Bonus:
     def update(self):
         self.bang_sound = pg.mixer.Sound('sounds/pampambonus.mp3')
         self.bang_sound.set_volume(5)
-        if self.timer > 0: self.timer -= 1
-        else: objects.remove(self)
+        if self.timer > 0:
+            self.timer -= 1
+        else:
+            objects.remove(self)
 
         for obj in objects:
             if obj.type == 'tank' and self.rect.colliderect(obj.rect):
@@ -298,6 +303,7 @@ class Bonus:
     def draw(self):
         if self.timer % 30 < 15:
             window.blit(self.image, self.rect)
+
 
 bullets = []
 # obj - color tank, coordinates, direction, buttons
