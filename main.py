@@ -7,7 +7,7 @@ WIDTH, HEIGHT = 900, 600
 FPS = 60
 # image 32pix
 TILE = 30
-#####################
+# sound bg
 bg_music = pg.mixer.Sound('sounds/engine.mp3')
 bg_music.play(loops=-1)
 
@@ -25,11 +25,14 @@ img_brick = pg.image.load('images/block/1.png')
 #     pg.image.load('images/block/2.png'),
 #     pg.image.load('images/block/3.png')
 # ]
-# img player
+# img player upgrade
 img_tank = [
-    pg.image.load('images/z2.png')
+    pg.image.load('images/t1.png'),
+    pg.image.load('images/t2.png'),
+    pg.image.load('images/t3.png'),
+    pg.image.load('images/t4.png')
 ]
-# img explosion
+# img explosion animation
 img_bangs = [
     pg.image.load('images/expl/explosion1.png'),
     pg.image.load('images/expl/explosion2.png'),
@@ -51,6 +54,19 @@ img_bangs = [
     pg.image.load('images/expl/explosion18.png')
 ]
 
+# img bonus
+img_bonus = [
+    pg.image.load('images/bonuses/starbonus.png'),
+    pg.image.load('images/bonuses/t3.png')
+]
+
+# bonus upgrade
+MOVE_SPEED = [1, 2, 2, 1, 2, 3, 3, 2]
+BULLET_SPEED = [4, 5, 6, 5, 5, 5, 6, 7]
+BULLET_DAMAGE = [1, 1, 2, 3, 2, 2, 3, 4]
+SHOT_DELAY = [60, 50, 30, 40, 30, 25, 25, 30]
+
+
 # x,y direction offset
 DIRECTS = [[0, -1], [1, 0], [0, 1], [-1, 0]]
 
@@ -68,8 +84,10 @@ class Interface:
         for obj in objects:
             if obj.type == 'tank':
                 pg.draw.rect(window, obj.color, (5 + i * 70, 5, 22, 22))
-                i += 1
-                # hp text coordinats in window
+                text = font_ui.render(str(obj.rank), 1, 'black')
+                rect = text.get_rect(center=(5 + i * 70 + 11, 5 + 11))
+                window.blit(text, rect)
+
                 text = font_ui.render(str(obj.hp), 1, obj.color)
                 rect = text.get_rect(center=(5 + i * 70 + 32, 5 + 11))
                 window.blit(text, rect)
@@ -87,13 +105,13 @@ class Tank:
         self.rect = pg.Rect(px, py, TILE, TILE)
         self.direct = direct
         # speed tanks
-        self.move_speed = 3
+        self.move_speed = 2
         # health player
         self.hp = 5
         # shot delay
         self.shot_timer = 2
         self.shot_delay = 40
-        self.bullet_speed = 14
+        self.bullet_speed = 12
         self.bullet_damage = 1
 
         self.key_left = key_list[0]
@@ -112,6 +130,12 @@ class Tank:
         self.image = pg.transform.scale(self.image, (self.image.get_width() - 5,
                                                      self.image.get_height() -5))
         self.rect = self.image.get_rect(center=self.rect.center)
+        # tank characteristics
+        self.move_speed = MOVE_SPEED[self.rank]
+        self.shot_delay = SHOT_DELAY[self.rank]
+        self.bullet_speed = BULLET_SPEED[self.rank]
+        self.bullet_damage = BULLET_DAMAGE[self.rank]
+
         # old pos if collicion tank
         old_x, old_y = self.rect.topleft
         if keys[self.key_left]:
@@ -133,29 +157,21 @@ class Tank:
 
         # shooting
         if keys[self.key_shot] and self.shot_timer == 0:
-            # sound
-            self.bang_sound = pg.mixer.Sound('sounds/bullet-ricochet-01.mp3')
-            # громкость звука
-            self.bang_sound.set_volume(5)
-            self.bang_sound.play()
             # speed bullets
             dx = DIRECTS[self.direct][0] * self.bullet_speed
             dy = DIRECTS[self.direct][1] * self.bullet_speed
             Bullet(self, self.rect.centerx, self.rect.centery, dx, dy, self.bullet_damage)
             self.shot_timer = self.shot_delay
+            # sound
+            self.bang_sound = pg.mixer.Sound('sounds/bullet-ricochet-01.mp3')
+            self.bang_sound.set_volume(5)
+            self.bang_sound.play()
         # shot delay(задержка выстрела)
         if self.shot_timer > 0:
             self.shot_timer -= 0.5
 
     def draw(self):
-        # pg.draw.rect(window, self.color, self.rect)
-        # # direction gun
-        # x = self.rect.centerx + DIRECTS[self.direct][0] * 30
-        # y = self.rect.centery + DIRECTS[self.direct][1] * 30
-        # pg.draw.line(window, 'white', self.rect.center, (x, y), 4)
         window.blit(self.image, self.rect)
-
-
 
     def damage(self, value):
         # sound
@@ -163,7 +179,7 @@ class Tank:
         self.hp -= value
         if self.hp <= 0:
 
-            # громкость звука
+            # sound
             self.expl_sound.set_volume(5)
             self.expl_sound.play()
             objects.remove(self)
@@ -179,33 +195,27 @@ class Bullet:
         self.damage = damage
 
     def update(self):
-
+        # sound
         self.ricocheted_sound = pg.mixer.Sound('sounds/fire.mp3')
-        # громкость звука
         self.ricocheted_sound.set_volume(5)
-
 
         self.px += self.dx
         self.py += self.dy
-        # if pos bullet
+        # if pos bullet exited the screen
         if self.px < 0 or self.px > WIDTH or self.py < 0 or self.py > HEIGHT:
-            # if the bullet exited the screen
             bullets.remove(self)
-
         else:
             for obj in objects:
                 # method checks the collision of the object with the coordinate True
-                if obj != self.parent and obj.type != 'bang' and obj.rect.collidepoint(self.px, self.py):
-
-                    obj.damage(self.damage)
-
-                    # if hits - bullets remove
-
-                    bullets.remove(self)
-                    # boom!
-                    Bang(self.px, self.py)
-                    self.ricocheted_sound.play()
-                    break
+                if obj != self.parent and obj.type != 'bang' and obj.type != 'bonus':
+                    if obj.rect.collidepoint(self.px, self.py):
+                        obj.damage(self.damage)
+                        # if hits - bullets remove
+                        bullets.remove(self)
+                        # boom!
+                        Bang(self.px, self.py)
+                        self.ricocheted_sound.play()
+                        break
 
     def draw(self):
         pg.draw.circle(window, 'white', (self.px, self.py), 2)
@@ -220,7 +230,7 @@ class Bang:
         pass
 
     def update(self):
-################# one frame one expl
+        # one frame one expl
         self.frame += 0.2
         if self.frame >= 18:
             objects.remove(self)
@@ -245,8 +255,6 @@ class Block:
 
     def draw(self):
         window.blit(img_brick, self.rect)
-        #pg.draw.rect(window, 'black', self.rect)
-        #pg.draw.rect(window, 'darkgrey', self.rect, 2)
 
     def damage(self, value):
         self.hp -= value
@@ -254,6 +262,42 @@ class Block:
             objects.remove(self)
 
 
+class Bonus:
+    def __init__(self, px, py, bonusNum):
+        objects.append(self)
+        self.type = 'bonus'
+
+        self.image = img_bonus[bonusNum]
+        self.rect = self.image.get_rect(center=(px, py))
+
+        self.timer = 600
+        self.bonusNum = bonusNum
+
+    def update(self):
+        self.bang_sound = pg.mixer.Sound('sounds/pampambonus.mp3')
+        self.bang_sound.set_volume(5)
+        if self.timer > 0: self.timer -= 1
+        else: objects.remove(self)
+
+        for obj in objects:
+            if obj.type == 'tank' and self.rect.colliderect(obj.rect):
+                if self.bonusNum == 0:
+                    if obj.rank < len(img_tank) - 1:
+                        obj.rank += 1
+                        # sound
+                        self.bang_sound.play()
+                        objects.remove(self)
+                        break
+                elif self.bonusNum == 1:
+                    # sound
+                    self.bang_sound.play()
+                    obj.hp += 1
+                    objects.remove(self)
+                    break
+
+    def draw(self):
+        if self.timer % 30 < 15:
+            window.blit(self.image, self.rect)
 
 bullets = []
 # obj - color tank, coordinates, direction, buttons
@@ -266,7 +310,7 @@ Ui = Interface()
 # block in window
 Block(100, 100, TILE)
 
-for b in range(FPS):
+for b in range(80):
     while True:
         x = randint(0, WIDTH // TILE) * TILE
         y = randint(1, HEIGHT // TILE) * TILE
@@ -278,27 +322,35 @@ for b in range(FPS):
 
         if not finded:
             break
+
     Block(x, y, TILE)
 
+bonusTimer = 360
 
 play = True
+
 while play:
     for event in pg.event.get():
-
         if event.type == pg.QUIT:
             play = False
     # traffic control
     keys = pg.key.get_pressed()
+
+    if bonusTimer > 0:
+        bonusTimer -= 1
+    else:
+        Bonus(randint(50, WIDTH - 50), randint(50, HEIGHT - 50), randint(0, len(img_bonus) - 1))
+        bonusTimer = randint(120, 240)
+
     # update obj
     for bullet in bullets:
         bullet.update()
     for obj in objects:
         obj.update()
     Ui.update()
-
-    # window.fill('darkgrey')
     # background
     window.blit(background_image, (0, 0))
+
     # update obj
     for bullet in bullets:
         bullet.draw()
