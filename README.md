@@ -1,4 +1,4 @@
-# Tanks_p_vs_p_pygame game for two players, destroy the opponent, health, damage, raise the level of your tank.
+# Tanks pvp pygame game for two players, destroy the opponent, health, damage, raise the level of your tank.
 Application has animation and sounds.
 control wasd, space, <- ->, r_enter.
 Enjoy.
